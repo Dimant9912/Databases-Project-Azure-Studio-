@@ -1,0 +1,75 @@
+Ερωτημα 1
+/* Περιγραφή: Πόσα τραγούδια υπάρχουν ανά είδος μουσικής.
+   Αποτελέσματα:  1567 */
+SELECT 
+    g.name AS genre,
+    COUNT(DISTINCT rt.track_id) AS track_count
+FROM genres g
+JOIN r_artist_genre rag ON g.name = rag.genre_name
+JOIN r_track_artist rt ON rag.artist_id = rt.artist_id
+GROUP BY g.name;
+
+
+/* Περιγραφή: Άλμπουμ με μέση διάρκεια τραγουδιών άνω των 3 λεπτών.
+   Αποτελέσματα: 1390 */
+SELECT 
+    a.name AS album_name,
+    AVG(t.duration) AS avg_duration
+FROM albums a
+JOIN r_albums_tracks rat ON a.id = rat.album_id
+JOIN tracks t ON rat.track_id = t.id
+GROUP BY a.name
+HAVING AVG(t.duration) > 180000;
+
+
+/* Περιγραφή: Καλλιτέχνες που έχουν ηχογραφήσει τουλάχιστον 5 τραγούδια.
+Αποτελέσματα:  1243 καλλιτέχνες */
+SELECT 
+    ar.name AS artist_name,
+    COUNT(DISTINCT rt.track_id) AS track_count
+FROM artists ar
+JOIN r_track_artist rt ON ar.id = rt.artist_id
+GROUP BY ar.name
+HAVING COUNT(DISTINCT rt.track_id) >= 5;
+
+
+/* Περιγραφή: Πόσοι καλλιτέχνες συμμετείχαν σε κάθε άλμπουμ.
+   Αποτελέσματα: 1665  */
+SELECT 
+    al.name AS album_name,
+    COUNT(DISTINCT raa.artist_id) AS artist_count
+FROM albums al
+JOIN r_albums_artists raa ON al.id = raa.album_id
+GROUP BY al.name;
+
+
+/* Περιγραφή: Καλλιτέχνες με τραγούδια ενέργειας > 0.8.
+   Αποτελέσματα:  1746  */
+SELECT 
+    ar.name AS artist_name,
+    COUNT(DISTINCT t.id) AS high_energy_tracks
+FROM artists ar
+JOIN r_track_artist rta ON ar.id = rta.artist_id
+JOIN tracks t ON rta.track_id = t.id
+JOIN audio_features af ON t.id = af.id
+WHERE af.energy > 0.8
+GROUP BY ar.name;
+
+
+Ερωτημα 2:
+
+ALTER TABLE r_albums_artists
+ADD CONSTRAINT pk_r_albums_artists
+PRIMARY KEY (album_id, artist_id);
+
+ALTER TABLE r_albums_tracks
+ADD CONSTRAINT pk_r_albums_tracks
+PRIMARY KEY (album_id, track_id);
+
+ALTER TABLE r_artist_genre
+ADD CONSTRAINT pk_r_artist_genre
+PRIMARY KEY (artist_id, genre_name);
+
+ALTER TABLE r_track_artist
+ADD CONSTRAINT pk_r_track_artist
+PRIMARY KEY (track_id, artist_id);

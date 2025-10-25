@@ -1,0 +1,166 @@
+---Ερωτημα 1---
+ALTER TABLE albums
+ADD AVG_Rating FLOAT;
+
+
+---Ερώτημα 2---
+ALTER TABLE albums
+ADD AVG_Rating FLOAT;
+
+UPDATE albums
+SET AVG_Rating = (
+    SELECT AVG(CAST(r.rating AS FLOAT))
+    FROM Ratings r
+    WHERE r.album_id = albums.id
+);
+
+
+---Ερώτημα 3---
+CREATE TRIGGER trg_UpdateAvgRating
+ON Ratings
+AFTER INSERT, UPDATE, DELETE
+AS
+BEGIN
+    UPDATE albums
+    SET AVG_Rating = (
+        SELECT AVG(r.rating)
+        FROM Ratings r
+        WHERE r.album_id = albums.id
+    )
+    WHERE albums.id IN (
+        SELECT album_id FROM inserted
+        UNION
+        SELECT album_id FROM deleted
+    );
+END;
+
+
+---Ερώτημα 4---
+CREATE INDEX idx_ratings_album_id
+ON Ratings(album_id);
+
+
+---Ερώτημα 5---
+SELECT 
+  LEFT(release_date, 4) AS year,
+  COUNT(*) AS albums_per_year
+FROM albums
+WHERE popularity > 40
+GROUP BY LEFT(release_date, 4);
+
+
+---Ερώτημα 6---
+SELECT 
+  LEFT(release_date, 4) AS year,
+  COUNT(*) AS albums_per_year
+FROM albums
+WHERE popularity > 40 OR album_type = 'single'
+GROUP BY LEFT(release_date, 4);
+
+
+---Ερώτημα 7---
+SELECT 
+  album_type,
+  LEFT(release_date, 4) AS year,
+  COUNT(*) AS albums_per_type_year
+FROM albums
+GROUP BY album_type, LEFT(release_date, 4);
+
+
+---Ερώτημα 8---
+SELECT 
+  LEFT(a.release_date, 4) AS year,
+  COUNT(*) AS albums_per_year,
+  ar.name AS artist
+FROM r_albums_artists ra
+JOIN albums a ON ra.album_id = a.id
+JOIN artists ar ON ra.artist_id = ar.id
+WHERE ar.name = 'Various Artists'
+GROUP BY ar.name, LEFT(a.release_date, 4);
+
+
+---Ερώτημα 9---
+SELECT 
+  LEFT(release_date, 4) AS year,
+  MAX(popularity) AS max_popularity
+FROM albums
+WHERE popularity > 0
+GROUP BY LEFT(release_date, 4);
+
+
+---Ερώτημα 10---
+SELECT ar.name
+FROM r_albums_artists ra
+JOIN artists ar ON ra.artist_id = ar.id
+GROUP BY ar.name
+HAVING COUNT(DISTINCT ra.album_id) > 1;
+
+
+---Ερώτημα 11---
+CREATE VIEW UserRatingsSummary AS
+SELECT 
+  user_id,
+  AVG(rating) AS avg_rating,
+  COUNT(*) AS rating_count
+FROM Ratings
+GROUP BY user_id;
+
+
+---Ερώτημα 12---
+SELECT TOP 10 name AS album_title, popularity
+FROM albums
+ORDER BY popularity DESC;
+
+
+---Ερώτημα 13---
+SELECT 
+  LEFT(a.release_date, 4) AS year,
+  a.name AS most_popular_album
+FROM albums a
+WHERE a.popularity = (
+  SELECT MAX(a2.popularity)
+  FROM albums a2
+  WHERE LEFT(a2.release_date, 4) = LEFT(a.release_date, 4)
+)
+ORDER BY year, most_popular_album;
+
+
+---Ερώτημα 14---
+SELECT ar.name
+FROM artists ar
+WHERE EXISTS (
+  SELECT 1 FROM r_artist_genre rag
+  WHERE rag.artist_id = ar.id AND rag.genre_name = 'Rock'
+)
+AND EXISTS (
+  SELECT 1 FROM r_artist_genre rag
+  WHERE rag.artist_id = ar.id AND rag.genre_name = 'Blues'
+)
+AND NOT EXISTS (
+  SELECT 1 FROM r_artist_genre rag
+  WHERE rag.artist_id = ar.id AND rag.genre_name NOT IN ('Rock', 'Blues')
+);
+
+
+---Ερώτημα 15---
+SELECT ar.name
+FROM artists ar
+WHERE ar.id IN (
+  SELECT artist_id FROM r_artist_genre WHERE genre_name = 'Rock'
+  INTERSECT
+  SELECT artist_id FROM r_artist_genre WHERE genre_name = 'Blues'
+)
+AND ar.id NOT IN (
+  SELECT artist_id FROM r_artist_genre WHERE genre_name NOT IN ('Rock', 'Blues')
+);
+
+
+---Ερώτημα 16---
+SELECT r1.user_id AS user1, r2.user_id AS user2
+FROM Ratings r1
+JOIN Ratings r2 
+  ON r1.album_id = r2.album_id 
+  AND r1.user_id < r2.user_id
+  AND r1.rating = r2.rating
+GROUP BY r1.user_id, r2.user_id
+HAVING COUNT(*) >= 4;
