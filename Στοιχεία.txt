@@ -1,0 +1,6 @@
+<ΔΗΜΗΤΡΙΟΣ ΑΝΤΩΝΙΟΥ> - <3230011>
+<ΣΑΒΒΑΣ ΙΩΑΚΕΙΜΙΔΗΣ > - <3190284>
+Endpoint: <mysqlserver3190284.database.windows.net>
+Username: <examiner>
+Password: <RandomPassword1932>
+Database: <r ExercisesDatabase>
